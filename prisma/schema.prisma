@@ -1,0 +1,422 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum PublishStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+enum DeliveryType {
+  CODE
+  TEXT
+  LINK
+  MANUAL
+}
+
+enum StockMode {
+  UNLIMITED
+  INVENTORY
+  MANUAL
+}
+
+enum InventoryStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  DISABLED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAYMENT_REVIEW
+  PAID
+  PROCESSING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+  REFUNDED
+  ABNORMAL
+}
+
+enum PaymentStatus {
+  PENDING
+  SUBMITTED
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum DeliveryStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+}
+
+enum TicketStatus {
+  OPEN
+  PROCESSING
+  RESOLVED
+  CLOSED
+}
+
+model Category {
+  id        String        @id @default(cuid())
+  nameZh    String        @map("name_zh")
+  nameEn    String        @map("name_en")
+  slug      String        @unique
+  icon      String?
+  sort      Int           @default(0)
+  status    PublishStatus @default(ACTIVE)
+  products  Product[]
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, sort])
+  @@map("categories")
+}
+
+model Product {
+  id             String           @id @default(cuid())
+  categoryId     String           @map("category_id")
+  category       Category         @relation(fields: [categoryId], references: [id])
+  nameZh         String           @map("name_zh")
+  nameEn         String           @map("name_en")
+  slug           String           @unique
+  shortDescZh    String           @map("short_desc_zh") @db.VarChar(500)
+  shortDescEn    String           @map("short_desc_en") @db.VarChar(500)
+  descriptionZh  String           @map("description_zh") @db.Text
+  descriptionEn  String           @map("description_en") @db.Text
+  purchaseNotice   String           @map("purchase_notice") @db.Text
+  purchaseNoticeEn String?          @map("purchase_notice_en") @db.Text
+  afterSale        String           @map("after_sale") @db.Text
+  afterSaleEn      String?          @map("after_sale_en") @db.Text
+  image          String?
+  badge          String?
+  featured       Boolean          @default(false)
+  sort           Int              @default(0)
+  status         PublishStatus    @default(DRAFT)
+  variants       ProductVariant[]
+  orderItems     OrderItem[]
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@index([categoryId, status, sort])
+  @@index([featured, status])
+  @@map("products")
+}
+
+model ProductVariant {
+  id              String          @id @default(cuid())
+  productId       String          @map("product_id")
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  nameZh          String          @map("name_zh")
+  nameEn          String          @map("name_en")
+  sku             String          @unique
+  deliveryType    DeliveryType    @map("delivery_type")
+  stockMode       StockMode       @default(INVENTORY) @map("stock_mode")
+  deliveryContent String?         @map("delivery_content") @db.Text
+  status          PublishStatus   @default(ACTIVE)
+  sort            Int             @default(0)
+  prices          VariantPrice[]
+  inventoryItems  InventoryItem[]
+  orderItems      OrderItem[]
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@index([productId, status, sort])
+  @@map("product_variants")
+}
+
+model VariantPrice {
+  id          String         @id @default(cuid())
+  variantId   String         @map("variant_id")
+  variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  currency    String         @db.Char(3)
+  amountMinor Int            @map("amount_minor")
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@unique([variantId, currency])
+  @@map("variant_prices")
+}
+
+model InventoryItem {
+  id          String                @id @default(cuid())
+  variantId   String                @map("variant_id")
+  variant     ProductVariant        @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  content     String                @db.Text
+  status      InventoryStatus       @default(AVAILABLE)
+  orderItemId String?               @unique @map("order_item_id")
+  orderItem   OrderItem?            @relation(fields: [orderItemId], references: [id])
+  reservation InventoryReservation?
+  soldAt      DateTime?             @map("sold_at")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+
+  @@index([variantId, status])
+  @@map("inventory_items")
+}
+
+model InventoryReservation {
+  id              String        @id @default(cuid())
+  inventoryItemId String        @unique @map("inventory_item_id")
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  orderId         String        @map("order_id")
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  expiresAt       DateTime      @map("expires_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([expiresAt])
+  @@map("inventory_reservations")
+}
+
+model Order {
+  id                String                 @id @default(cuid())
+  orderNo           String                 @unique @map("order_no")
+  email             String?
+  contact           String
+  queryPasswordHash String                 @map("query_token_hash")
+  currency          String                 @db.Char(3)
+  totalMinor        Int                    @map("total_minor")
+  orderStatus       OrderStatus            @default(PENDING_PAYMENT) @map("order_status")
+  paymentStatus     PaymentStatus          @default(PENDING) @map("payment_status")
+  deliveryStatus    DeliveryStatus         @default(PENDING) @map("delivery_status")
+  expiresAt         DateTime               @map("expires_at")
+  paidAt            DateTime?              @map("paid_at")
+  completedAt       DateTime?              @map("completed_at")
+  cancelledAt       DateTime?              @map("cancelled_at")
+  proofRequested    Boolean                @default(false) @map("proof_requested")
+  items             OrderItem[]
+  payments          Payment[]
+  paymentProofs     PaymentProof[]
+  proofRejections   ProofRejection[]
+  reservations      InventoryReservation[]
+  deliveryRecords   DeliveryRecord[]
+  supportTickets    SupportTicket[]
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @updatedAt @map("updated_at")
+
+  @@index([orderStatus, createdAt])
+  @@index([email, createdAt])
+  @@index([contact, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String         @id @default(cuid())
+  orderId        String         @map("order_id")
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String         @map("product_id")
+  product        Product        @relation(fields: [productId], references: [id])
+  variantId      String         @map("variant_id")
+  variant        ProductVariant @relation(fields: [variantId], references: [id])
+  productNameZh  String         @map("product_name_zh")
+  productNameEn  String         @map("product_name_en")
+  variantNameZh  String         @map("variant_name_zh")
+  variantNameEn  String         @map("variant_name_en")
+  sku            String
+  deliveryType   DeliveryType   @map("delivery_type")
+  unitPriceMinor Int            @map("unit_price_minor")
+  quantity       Int            @default(1)
+  totalMinor     Int            @map("total_minor")
+  inventoryItem  InventoryItem?
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Payment {
+  id             String         @id @default(cuid())
+  orderId        String         @map("order_id")
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider       String
+  transactionId  String?        @unique @map("transaction_id")
+  idempotencyKey String         @unique @map("idempotency_key")
+  currency       String         @db.Char(3)
+  amountMinor    Int            @map("amount_minor")
+  status         PaymentStatus  @default(PENDING)
+  submittedAt    DateTime?      @map("submitted_at")
+  paidAt         DateTime?      @map("paid_at")
+  events         PaymentEvent[]
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([orderId, status])
+  @@map("payments")
+}
+
+model PaymentProof {
+  id        String   @id @default(cuid())
+  orderId   String   @map("order_id")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  imagePath String   @map("image_path")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("payment_proofs")
+}
+
+model ProofRejection {
+  id        String   @id @default(cuid())
+  orderId   String   @map("order_id")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  note      String?  @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("proof_rejections")
+}
+
+model PaymentEvent {
+  id          String    @id @default(cuid())
+  paymentId   String    @map("payment_id")
+  payment     Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  eventKey    String    @unique @map("event_key")
+  eventType   String    @map("event_type")
+  payload     Json
+  processedAt DateTime? @map("processed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("payment_events")
+}
+
+model DeliveryRecord {
+  id          String         @id @default(cuid())
+  orderId     String         @map("order_id")
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type        DeliveryType
+  content     String         @db.Text
+  status      DeliveryStatus @default(DELIVERED)
+  deliveredBy String?        @map("delivered_by")
+  deliveredAt DateTime       @default(now()) @map("delivered_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  @@index([orderId, status])
+  @@map("delivery_records")
+}
+
+model Admin {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String         @map("password_hash")
+  name         String
+  active       Boolean        @default(true)
+  sessions     AdminSession[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@map("admins")
+}
+
+model AdminSession {
+  id        String   @id @default(cuid())
+  adminId   String   @map("admin_id")
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([adminId])
+  @@index([expiresAt])
+  @@map("admin_sessions")
+}
+
+model Announcement {
+  id        String        @id @default(cuid())
+  titleZh   String        @map("title_zh")
+  titleEn   String        @map("title_en")
+  contentZh String        @map("content_zh") @db.Text
+  contentEn String        @map("content_en") @db.Text
+  status    PublishStatus @default(ACTIVE)
+  sort      Int           @default(0)
+  startsAt  DateTime?     @map("starts_at")
+  endsAt    DateTime?     @map("ends_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, sort])
+  @@map("announcements")
+}
+
+model Faq {
+  id         String        @id @default(cuid())
+  questionZh String        @map("question_zh")
+  questionEn String        @map("question_en")
+  answerZh   String        @map("answer_zh") @db.Text
+  answerEn   String        @map("answer_en") @db.Text
+  status     PublishStatus @default(ACTIVE)
+  sort       Int           @default(0)
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, sort])
+  @@map("faqs")
+}
+
+model ContentPage {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  titleZh   String        @map("title_zh")
+  titleEn   String        @map("title_en")
+  contentZh String        @map("content_zh") @db.LongText
+  contentEn String        @map("content_en") @db.LongText
+  status    PublishStatus @default(ACTIVE)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@map("content_pages")
+}
+
+model SupportTicket {
+  id        String       @id @default(cuid())
+  ticketNo  String       @unique @map("ticket_no")
+  orderId   String?      @map("order_id")
+  order     Order?       @relation(fields: [orderId], references: [id])
+  email     String
+  subject   String
+  message   String       @db.Text
+  reply     String?      @db.Text
+  status    TicketStatus @default(OPEN)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@map("support_tickets")
+}
+
+model SiteSetting {
+  key       String   @id
+  value     Json
+  type      String   @default("text")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminId    String?  @map("admin_id")
+  admin      Admin?   @relation(fields: [adminId], references: [id])
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([adminId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
