@@ -115,11 +115,13 @@ export function AdminToastForm({
   action,
   success = "操作成功",
   className,
+  confirm,
   children,
 }: {
   action: (formData: FormData) => Promise<void | { error?: string }> | void;
   success?: string;
   className?: string;
+  confirm?: string;
   children: ReactNode;
 }) {
   const toast = useAdminToast();
@@ -127,6 +129,7 @@ export function AdminToastForm({
     <form
       className={className}
       action={async (formData) => {
+        if (confirm && !window.confirm(confirm)) return;
         try {
           const result = await action(formData);
           if (result?.error) {

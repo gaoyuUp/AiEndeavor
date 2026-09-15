@@ -1,7 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeFavicon } from "@/components/theme-favicon";
 import { getPreferences } from "@/lib/preferences";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const { theme } = await getPreferences();

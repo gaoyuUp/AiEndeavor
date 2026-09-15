@@ -9,7 +9,7 @@ export function SiteHeader({ locale, currency, theme, lockCurrency = false }: { 
 
   return (
     <header className="site-header sticky top-0 z-40 border-b border-white/8 backdrop-blur-xl">
-      <div className="container-shell flex h-18 items-center justify-between gap-4 lg:h-20">
+      <div className="container-shell flex h-16 items-center justify-between gap-4 lg:h-[4.25rem]">
         <Link href="/" className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
           <BrandMark size={40} className="size-9 lg:size-10" />
           <span>灵搜<span className="text-sky-400">AI</span></span>

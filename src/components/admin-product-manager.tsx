@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { publishStatusLabels, statusLabel } from "@/lib/status-labels";
 import { optionalUsdMinor } from "@/lib/fx";
-import { Pencil, Plus, Power, Star, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Plus, Power, Star, Trash2, X } from "lucide-react";
 import { formatMoney } from "@/lib/utils";
 import { AdminPagination } from "@/components/admin-pagination";
 import { useAdminToast } from "@/components/admin-toast";
@@ -79,9 +79,35 @@ function Field({
 
 const iconActionClass = "button-secondary button-compact size-7 shrink-0 px-0";
 
-export function AdminProductManager({ products, categories, page, total, totalPages }: { products: ProductRow[]; categories: CategoryOption[]; page: number; total: number; totalPages: number }) {
+export function AdminProductManager({
+  products,
+  categories,
+  page,
+  total,
+  totalPages,
+  categoryId,
+  sortDir,
+}: {
+  products: ProductRow[];
+  categories: CategoryOption[];
+  page: number;
+  total: number;
+  totalPages: number;
+  categoryId: string;
+  sortDir: "asc" | "desc";
+}) {
   const router = useRouter();
   const toast = useAdminToast();
+
+  function updateQuery(next: { category?: string; order?: string }) {
+    const params = new URLSearchParams();
+    const category = next.category ?? categoryId;
+    const order = next.order ?? sortDir;
+    if (category) params.set("category", category);
+    if (order === "desc") params.set("order", "desc");
+    const query = params.toString();
+    router.push(query ? `/admin/products?${query}` : "/admin/products");
+  }
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -181,7 +207,18 @@ export function AdminProductManager({ products, categories, page, total, totalPa
 
   return (
     <div>
-      <div className="mb-5 flex justify-end">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <select
+          className="field max-w-xs"
+          aria-label="按分类筛选"
+          value={categoryId}
+          onChange={(event) => updateQuery({ category: event.target.value })}
+        >
+          <option value="">全部分类</option>
+          {categories.map((item) => (
+            <option key={item.id} value={item.id}>{item.nameZh}</option>
+          ))}
+        </select>
         <button className="button-primary" onClick={() => setOpen(!open)}><Plus size={15} />新增商品</button>
       </div>
       {open && (
@@ -243,12 +280,28 @@ export function AdminProductManager({ products, categories, page, total, totalPa
               <th>分类</th>
               <th>规格 / SKU</th>
               <th>价格</th>
-              <th className="w-[88px]">排序</th>
+              <th className="w-[88px]">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-white"
+                  onClick={() => updateQuery({ order: sortDir === "asc" ? "desc" : "asc" })}
+                  aria-label={sortDir === "asc" ? "当前按排序正序，点击改为倒序" : "当前按排序倒序，点击改为正序"}
+                  title={sortDir === "asc" ? "正序：数字从小到大。点击改为倒序" : "倒序：数字从大到小。点击改为正序"}
+                >
+                  排序
+                  {sortDir === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+              </th>
               <th>状态</th>
               <th className="pr-4 text-right">操作</th>
             </tr>
           </thead>
           <tbody>
+            {products.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-8 text-center text-sm text-slate-500">没有符合条件的商品</td>
+              </tr>
+            ) : null}
             {products.map((product) => {
               const variant = product.variants[0];
               const cny = variant?.prices.find((price) => price.currency === "CNY" && price.amountMinor > 0);

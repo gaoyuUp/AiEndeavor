@@ -50,7 +50,7 @@ export default async function ProductsPage({
 
   return (
     <StoreShell>
-      <section className="container-shell py-12 sm:py-20">
+      <section className="container-shell py-10 sm:py-14">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-sky-400">
           {locale === "zh" ? "产品中心" : "Catalog"}
         </p>

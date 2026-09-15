@@ -57,6 +57,12 @@ html[data-theme="light"] {
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html:has(.store-theme) {
+  font-size: 93.75%;
 }
 
 body {
@@ -570,6 +576,84 @@ html[data-theme="light"] .store-theme .human-check-verified .human-check-mark {
   color: #cbd5e1;
   line-height: 1.85;
   white-space: pre-wrap;
+}
+
+.platform-card {
+  position: relative;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card-background);
+  padding: 10px 12px 10px 10px;
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.platform-card:hover {
+  border-color: rgba(56, 189, 248, 0.42);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(8, 18, 36, 0.18);
+}
+
+.platform-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(20, 40, 70, 0.1);
+}
+
+.platform-mark img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.platform-mark-dark {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="light"] .store-theme .platform-mark {
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .store-theme .platform-mark-dark {
+  background: #0f172a;
+}
+
+.platform-card-arrow {
+  flex-shrink: 0;
+  color: var(--muted);
+  opacity: 0.35;
+  transition: opacity 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.platform-card:hover .platform-card-arrow {
+  color: var(--brand);
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+
+html[data-theme="light"] .store-theme .platform-card {
+  background: #ffffff;
+  border-color: rgba(100, 116, 139, 0.18);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+html[data-theme="light"] .store-theme .platform-card:hover {
+  border-color: rgba(2, 132, 199, 0.38);
+  box-shadow: 0 10px 24px rgba(30, 64, 105, 0.1);
 }
 
 @media (max-width: 640px) {
