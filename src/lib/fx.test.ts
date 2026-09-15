@@ -4,8 +4,10 @@ import {
   optionalUsdMinor,
   parseFrankfurterUsdCny,
   parseUsdCnyRate,
+  resolveOriginalPrice,
   resolveStorePrice,
   settlementCnyMinor,
+  originalUsdtAmount,
   usdtAmountFromCnyMinor,
 } from "./fx";
 
@@ -66,5 +68,27 @@ describe("USD/CNY store pricing", () => {
     expect(optionalUsdMinor("19.99")).toBe(1999);
     expect(parseUsdCnyRate("0")).toBe(7);
     expect(parseUsdCnyRate("7.1256")).toBe(7.1256);
+  });
+
+  it("hides original price when neither original CNY nor USD is set", () => {
+    expect(resolveOriginalPrice({ originalCnyMinor: null, originalUsdMinor: null }, "CNY", 7)).toBeNull();
+    expect(resolveOriginalPrice({ originalCnyMinor: 0, originalUsdMinor: 0 }, "USD", 7)).toBeNull();
+  });
+
+  it("uses listed original USD when set, otherwise converts original CNY", () => {
+    expect(resolveOriginalPrice({ originalCnyMinor: 19800, originalUsdMinor: 2999 }, "USD", 7)).toEqual({
+      currency: "USD",
+      amountMinor: 2999,
+      converted: false,
+    });
+    const converted = resolveOriginalPrice({ originalCnyMinor: 19800, originalUsdMinor: null }, "USD", 7.12);
+    expect(converted?.converted).toBe(true);
+    expect(converted?.amountMinor).toBe(cnyMinorToUsdMinor(19800, 7.12));
+  });
+
+  it("uses listed original USD for USDT, otherwise converts original CNY", () => {
+    expect(originalUsdtAmount({ originalCnyMinor: 19800, originalUsdMinor: 2799 }, 7)).toBe(27.99);
+    expect(originalUsdtAmount({ originalCnyMinor: 19800, originalUsdMinor: null }, 7)).toBe(28.29);
+    expect(originalUsdtAmount({ originalCnyMinor: null, originalUsdMinor: null }, 7)).toBeNull();
   });
 });

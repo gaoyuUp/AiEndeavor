@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { publishStatusLabels, statusLabel } from "@/lib/status-labels";
-import { optionalUsdMinor } from "@/lib/fx";
+import { optionalUsdMinor, resolveOriginalPrice, resolveStorePrice, type PricePoint } from "@/lib/fx";
 import { ChevronDown, ChevronUp, Pencil, Plus, Power, Star, Trash2, X } from "lucide-react";
 import { formatMoney } from "@/lib/utils";
 import { AdminPagination } from "@/components/admin-pagination";
@@ -39,6 +39,8 @@ type ProductRow = {
     deliveryType: "CODE" | "TEXT" | "LINK" | "MANUAL";
     stockMode: "UNLIMITED" | "INVENTORY" | "MANUAL";
     deliveryContent: string | null;
+    originalCnyMinor: number | null;
+    originalUsdMinor: number | null;
     prices: Array<{ currency: string; amountMinor: number }>;
   }>;
 };
@@ -79,6 +81,43 @@ function Field({
 
 const iconActionClass = "button-secondary button-compact size-7 shrink-0 px-0";
 
+function moneyOrDash(amountMinor: number | null | undefined, currency: "CNY" | "USD", struck = false) {
+  if (!amountMinor || amountMinor <= 0) return <span className="text-slate-600">—</span>;
+  return (
+    <span className={struck ? "text-slate-500 line-through decoration-slate-500/80" : undefined}>
+      {formatMoney(amountMinor, currency)}
+    </span>
+  );
+}
+
+function AdminPriceCell({
+  variant,
+  usdCnyRate,
+}: {
+  variant?: ProductRow["variants"][number];
+  usdCnyRate: number;
+}) {
+  if (!variant) return <span className="text-slate-500">—</span>;
+  const prices = variant.prices as PricePoint[];
+  const currentCny = resolveStorePrice(prices, "CNY", usdCnyRate);
+  const currentUsd = resolveStorePrice(prices, "USD", usdCnyRate);
+  const originalCny = resolveOriginalPrice(variant, "CNY", usdCnyRate);
+  const originalUsd = resolveOriginalPrice(variant, "USD", usdCnyRate);
+  return (
+    <div className="grid min-w-[220px] grid-cols-[2.25rem_minmax(0,1fr)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs leading-5">
+      <span />
+      <span className="text-[10px] text-slate-500">人民币</span>
+      <span className="text-[10px] text-slate-500">美元</span>
+      <span className="text-[10px] text-slate-500">现价</span>
+      {moneyOrDash(currentCny?.amountMinor, "CNY")}
+      {moneyOrDash(currentUsd?.amountMinor, "USD")}
+      <span className="text-[10px] text-slate-500">原价</span>
+      {moneyOrDash(originalCny?.amountMinor, "CNY", true)}
+      {moneyOrDash(originalUsd?.amountMinor, "USD", true)}
+    </div>
+  );
+}
+
 export function AdminProductManager({
   products,
   categories,
@@ -87,6 +126,7 @@ export function AdminProductManager({
   totalPages,
   categoryId,
   sortDir,
+  usdCnyRate,
 }: {
   products: ProductRow[];
   categories: CategoryOption[];
@@ -95,6 +135,7 @@ export function AdminProductManager({
   totalPages: number;
   categoryId: string;
   sortDir: "asc" | "desc";
+  usdCnyRate: number;
 }) {
   const router = useRouter();
   const toast = useAdminToast();
@@ -126,6 +167,8 @@ export function AdminProductManager({
       image: values.image || undefined,
       priceCny: Math.round(Number(values.priceCny) * 100),
       priceUsd: optionalUsdMinor(values.priceUsd),
+      originalCny: optionalUsdMinor(values.originalCny),
+      originalUsd: optionalUsdMinor(values.originalUsd),
     };
     const response = await fetch("/api/admin/products", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
     const body = await response.json();
@@ -191,6 +234,8 @@ export function AdminProductManager({
         ...values,
         priceCny: Math.round(Number(values.priceCny) * 100),
         priceUsd: optionalUsdMinor(values.priceUsd),
+        originalCny: optionalUsdMinor(values.originalCny),
+        originalUsd: optionalUsdMinor(values.originalUsd),
       }),
     });
     const result = await response.json();
@@ -250,9 +295,15 @@ export function AdminProductManager({
             <Field label="库存模式">
               <select name="stockMode" className="field"><option value="INVENTORY">库存池</option><option value="UNLIMITED">不限库存</option><option value="MANUAL">人工容量</option></select>
             </Field>
-            <Field label="人民币价格"><input name="priceCny" className="field" required type="number" min="0" step="0.01" placeholder="0.00" /></Field>
-            <Field label="美元价格（选填）" hint="不填则前台 USD 按站点汇率换算">
+            <Field label="现价（人民币）"><input name="priceCny" className="field" required type="number" min="0" step="0.01" placeholder="0.00" /></Field>
+            <Field label="现价（美元）" hint="不填则前台 USD 按站点汇率换算">
               <input name="priceUsd" className="field" type="number" min="0" step="0.01" placeholder="0.00" />
+            </Field>
+            <Field label="原价（人民币）" hint="不填则前台不显示原价">
+              <input name="originalCny" className="field" type="number" min="0" step="0.01" placeholder="0.00" />
+            </Field>
+            <Field label="原价（美元）" hint="不填则前台 USD 原价按汇率从人民币原价换算">
+              <input name="originalUsd" className="field" type="number" min="0" step="0.01" placeholder="0.00" />
             </Field>
             <Field label="商品图片 URL（选填）" hint="可留空，前台会显示默认图标" className="md:col-span-2">
               <input name="image" className="field" placeholder="https://..." />
@@ -304,16 +355,13 @@ export function AdminProductManager({
             ) : null}
             {products.map((product) => {
               const variant = product.variants[0];
-              const cny = variant?.prices.find((price) => price.currency === "CNY" && price.amountMinor > 0);
-              const usd = variant?.prices.find((price) => price.currency === "USD" && price.amountMinor > 0);
               return (
                 <tr key={product.id} className="border-t border-white/8">
                   <td className="p-4"><strong className="block">{product.nameZh}</strong><span className="text-xs text-slate-500">/{product.slug}</span></td>
                   <td className="text-slate-400">{product.category.nameZh}</td>
                   <td><span className="block">{variant?.nameZh}</span><span className="text-xs text-slate-500">{variant?.sku}</span></td>
-                  <td>
-                    <span className="block">{cny ? formatMoney(cny.amountMinor, "CNY") : "—"}</span>
-                    <span className="mt-1 block text-xs text-slate-500">{usd ? formatMoney(usd.amountMinor, "USD") : "USD 按汇率"}</span>
+                  <td className="py-3">
+                    <AdminPriceCell variant={variant} usdCnyRate={usdCnyRate} />
                   </td>
                   <td>
                     <div className="flex items-center gap-1">
@@ -420,9 +468,15 @@ export function AdminProductManager({
             <Field label="库存模式">
               <select name="stockMode" className="field" defaultValue={editingVariant.stockMode}><option value="INVENTORY">库存池</option><option value="UNLIMITED">不限库存</option><option value="MANUAL">人工容量</option></select>
             </Field>
-            <Field label="人民币价格"><input name="priceCny" className="field" type="number" step="0.01" min="0" defaultValue={(editingVariant.prices.find((p) => p.currency === "CNY")?.amountMinor ?? 0) / 100} required /></Field>
-            <Field label="美元价格（选填）" hint="留空则按站点汇率换算美元价">
+            <Field label="现价（人民币）"><input name="priceCny" className="field" type="number" step="0.01" min="0" defaultValue={(editingVariant.prices.find((p) => p.currency === "CNY")?.amountMinor ?? 0) / 100} required /></Field>
+            <Field label="现价（美元）" hint="留空则按站点汇率换算美元价">
               <input name="priceUsd" className="field" type="number" step="0.01" min="0" defaultValue={editingUsdMinor > 0 ? editingUsdMinor / 100 : ""} placeholder="0.00" />
+            </Field>
+            <Field label="原价（人民币）" hint="不填则前台不显示原价">
+              <input name="originalCny" className="field" type="number" step="0.01" min="0" defaultValue={(editingVariant.originalCnyMinor ?? 0) > 0 ? (editingVariant.originalCnyMinor ?? 0) / 100 : ""} placeholder="0.00" />
+            </Field>
+            <Field label="原价（美元）" hint="留空则按站点汇率从人民币原价换算">
+              <input name="originalUsd" className="field" type="number" step="0.01" min="0" defaultValue={(editingVariant.originalUsdMinor ?? 0) > 0 ? (editingVariant.originalUsdMinor ?? 0) / 100 : ""} placeholder="0.00" />
             </Field>
             <Field label="固定交付内容（选填）" hint="卡密库存请在库存页添加，这里只填 LINK / TEXT 的固定内容" className="md:col-span-2">
               <textarea name="deliveryContent" className="field" rows={4} defaultValue={editingVariant.deliveryContent ?? ""} />

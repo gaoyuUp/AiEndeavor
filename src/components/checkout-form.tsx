@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { HumanCheckBox } from "@/components/human-check-box";
-import { formatMoney } from "@/lib/utils";
+import { PriceDisplay } from "@/components/price-display";
 
 type Variant = {
   id: string;
@@ -12,6 +12,7 @@ type Variant = {
   stockMode: string;
   stock: number | null;
   price: { currency: string; amountMinor: number } | null;
+  original: { currency: string; amountMinor: number } | null;
 };
 
 export function CheckoutForm({
@@ -90,7 +91,15 @@ export function CheckoutForm({
                   </span>
                 </span>
               </span>
-              <strong className="text-sm text-sky-300">{variant.price ? formatMoney(variant.price.amountMinor, variant.price.currency, locale) : "—"}</strong>
+              <PriceDisplay
+                price={variant.price}
+                original={variant.original}
+                locale={locale}
+                layout="stack"
+                currentClassName="text-sm font-semibold text-sky-300"
+                originalClassName="text-xs"
+                className="items-end text-right"
+              />
             </label>
           );
         })}

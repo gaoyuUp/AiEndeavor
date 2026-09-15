@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { listedAmountMinor, parseUsdCnyRate, settlementCnyMinor, usdtAmountFromCnyMinor } from "@/lib/fx";
+import { listedAmountMinor, originalUsdtAmount, parseUsdCnyRate, resolveOriginalPrice, settlementCnyMinor, usdtAmountFromCnyMinor } from "@/lib/fx";
 import { getUsdCnyRate } from "@/lib/fx-server";
 import { assertOrderAccess, StoreError } from "@/lib/orders";
 import { mockPaymentProvider } from "@/lib/payment";
@@ -45,13 +45,25 @@ export async function POST(request: Request) {
     }
 
     const settings = await getPaymentSettings();
+    const usdCnyRate = await getUsdCnyRate();
     const amountMinor = await orderCnyMinor(order);
     const usdtAmount = usdtAmountFromCnyMinor(amountMinor, settings.cnyRate);
+    const variantId = order.items[0]?.variantId;
+    const variant = variantId
+      ? await db.productVariant.findUnique({
+          where: { id: variantId },
+          select: { originalCnyMinor: true, originalUsdMinor: true },
+        })
+      : null;
+    const original = variant ? resolveOriginalPrice(variant, "CNY", usdCnyRate) : null;
+    const originalUsdt = variant ? originalUsdtAmount(variant, settings.cnyRate) : null;
     const existing = await db.payment.findUnique({ where: { idempotencyKey: `payment:${order.id}` } });
     const payload = {
       wallet: settings.wallet,
       network: "BNB Smart Chain (BEP20)",
       amountMinor,
+      originalAmountMinor: original?.amountMinor ?? null,
+      originalUsdtAmount: originalUsdt,
       currency: "CNY" as const,
       usdtAmount,
       qrImage: "/payments/collection-qr.jpg",

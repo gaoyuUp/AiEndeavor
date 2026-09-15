@@ -39,6 +39,19 @@ export function usdtAmountFromCnyMinor(cnyMinor: number, cnyPerUsdt: number) {
   return Number((cnyMinor / 100 / rate).toFixed(2));
 }
 
+export function originalUsdtAmount(
+  input: { originalCnyMinor?: number | null; originalUsdMinor?: number | null },
+  cnyPerUsdt: number,
+) {
+  if ((input.originalUsdMinor ?? 0) > 0) {
+    return Number(((input.originalUsdMinor as number) / 100).toFixed(2));
+  }
+  if ((input.originalCnyMinor ?? 0) > 0) {
+    return usdtAmountFromCnyMinor(input.originalCnyMinor as number, cnyPerUsdt);
+  }
+  return null;
+}
+
 export function settlementCnyMinor(
   order: { currency: string; totalMinor: number },
   listedCnyMinor: number | null,
@@ -47,6 +60,24 @@ export function settlementCnyMinor(
   if (order.currency === "CNY") return order.totalMinor;
   if (listedCnyMinor != null) return listedCnyMinor;
   return Math.round(order.totalMinor * parseUsdCnyRate(usdCnyRate));
+}
+
+export function originalPricePoints(input: {
+  originalCnyMinor?: number | null;
+  originalUsdMinor?: number | null;
+}): PricePoint[] {
+  const points: PricePoint[] = [];
+  if ((input.originalCnyMinor ?? 0) > 0) points.push({ currency: "CNY", amountMinor: input.originalCnyMinor as number });
+  if ((input.originalUsdMinor ?? 0) > 0) points.push({ currency: "USD", amountMinor: input.originalUsdMinor as number });
+  return points;
+}
+
+export function resolveOriginalPrice(
+  input: { originalCnyMinor?: number | null; originalUsdMinor?: number | null },
+  currency: "CNY" | "USD",
+  usdCnyRate: number,
+) {
+  return resolveStorePrice(originalPricePoints(input), currency, usdCnyRate);
 }
 
 export function resolveStorePrice(

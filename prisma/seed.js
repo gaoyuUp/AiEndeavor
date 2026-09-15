@@ -55,7 +55,7 @@ async function main() {
       descriptionEn: "Clear checkout guidance with manual fulfillment. Our team will process the service using the contact details in your order.",
       badge: "热门",
       featured: true,
-      variant: { nameZh: "1 个月", nameEn: "1 month", sku: "GPT-PLUS-1M", deliveryType: "MANUAL", stockMode: "MANUAL", deliveryContent: null },
+      variant: { nameZh: "1 个月", nameEn: "1 month", sku: "GPT-PLUS-1M", deliveryType: "MANUAL", stockMode: "MANUAL", deliveryContent: null, originalCnyMinor: 19800, originalUsdMinor: 2799 },
       prices: { CNY: 13800, USD: 1999 },
     },
     {

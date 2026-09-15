@@ -5,7 +5,7 @@ import { CheckoutForm } from "@/components/checkout-form";
 import { ProductMark } from "@/components/product-mark";
 import { StoreShell } from "@/components/store-shell";
 import { db } from "@/lib/db";
-import { resolveStorePrice } from "@/lib/fx";
+import { resolveOriginalPrice, resolveStorePrice } from "@/lib/fx";
 import { getUsdCnyRate } from "@/lib/fx-server";
 import { getPreferences } from "@/lib/preferences";
 
@@ -42,6 +42,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     stockMode: variant.stockMode,
     stock: variant.stockMode === "INVENTORY" ? variant._count.inventoryItems : null,
     price: resolveStorePrice(variant.prices, currency, usdCnyRate),
+    original: resolveOriginalPrice(variant, currency, usdCnyRate),
   }));
 
   return (

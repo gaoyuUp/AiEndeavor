@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ArrowUpRight, Box } from "lucide-react";
 import { ProductMark } from "@/components/product-mark";
-import { resolveStorePrice } from "@/lib/fx";
+import { PriceDisplay } from "@/components/price-display";
+import { resolveOriginalPrice, resolveStorePrice } from "@/lib/fx";
 import type { Currency, Locale } from "@/lib/preferences";
 import { copy } from "@/lib/preferences";
-import { formatMoney } from "@/lib/utils";
 
 export type StoreProduct = {
   id: string;
@@ -20,6 +20,8 @@ export type StoreProduct = {
     nameZh: string;
     nameEn: string;
     stockMode: string;
+    originalCnyMinor?: number | null;
+    originalUsdMinor?: number | null;
     prices: Array<{ currency: string; amountMinor: number }>;
     _count?: { inventoryItems: number };
   }>;
@@ -39,6 +41,7 @@ export function ProductCard({
   const t = copy[locale];
   const variant = product.variants[0];
   const price = variant ? resolveStorePrice(variant.prices, currency, usdCnyRate) : null;
+  const original = variant ? resolveOriginalPrice(variant, currency, usdCnyRate) : null;
   const stock = variant?.stockMode === "INVENTORY" ? variant._count?.inventoryItems ?? 0 : null;
 
   return (
@@ -60,8 +63,16 @@ export function ProductCard({
       <div className="mt-auto flex items-end justify-between gap-3 pt-6">
         <div>
           <p className="text-sm text-slate-500">{variant ? (locale === "zh" ? variant.nameZh : variant.nameEn) : "—"}</p>
-          <p className="mt-1.5 text-2xl font-semibold text-white">
-            {price ? formatMoney(price.amountMinor, price.currency, locale) : "—"}
+          <p className="mt-1.5">
+            <PriceDisplay
+              price={price}
+              original={original}
+              locale={locale}
+              layout="stack"
+              reserveOriginal
+              currentClassName="text-2xl font-semibold text-white"
+              originalClassName="text-sm"
+            />
           </p>
           <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
             <Box size={11} />

@@ -124,6 +124,8 @@ model ProductVariant {
   deliveryType    DeliveryType    @map("delivery_type")
   stockMode       StockMode       @default(INVENTORY) @map("stock_mode")
   deliveryContent String?         @map("delivery_content") @db.Text
+  originalCnyMinor Int?           @map("original_cny_minor")
+  originalUsdMinor Int?           @map("original_usd_minor")
   status          PublishStatus   @default(ACTIVE)
   sort            Int             @default(0)
   prices          VariantPrice[]

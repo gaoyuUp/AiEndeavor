@@ -2,6 +2,7 @@ import { AdminProductManager } from "@/components/admin-product-manager";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getUsdCnyRate } from "@/lib/fx-server";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function AdminProductsPage({
   const categoryId = params.category?.trim() || "";
   const sortDir = params.order === "desc" ? "desc" : "asc";
   const where = categoryId ? { categoryId } : {};
-  const [products, categories, total] = await Promise.all([
+  const [products, categories, total, usdCnyRate] = await Promise.all([
     db.product.findMany({
       where,
       include: { category: true, variants: { include: { prices: true }, orderBy: { sort: "asc" } } },
@@ -27,6 +28,7 @@ export default async function AdminProductsPage({
     }),
     db.category.findMany({ orderBy: { sort: "asc" } }),
     db.product.count({ where }),
+    getUsdCnyRate(),
   ]);
   return (
     <AdminShell admin={admin} title="商品管理">
@@ -38,6 +40,7 @@ export default async function AdminProductsPage({
         totalPages={Math.max(1, Math.ceil(total / PAGE_SIZE))}
         categoryId={categoryId}
         sortDir={sortDir}
+        usdCnyRate={usdCnyRate}
       />
     </AdminShell>
   );

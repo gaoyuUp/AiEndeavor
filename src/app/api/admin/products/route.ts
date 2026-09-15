@@ -28,6 +28,8 @@ const schema = z.object({
   deliveryContent: z.string().optional(),
   priceCny: z.number().int().nonnegative(),
   priceUsd: z.number().int().positive().nullable().optional(),
+  originalCny: z.number().int().positive().nullable().optional(),
+  originalUsd: z.number().int().positive().nullable().optional(),
 });
 
 export async function GET() {
@@ -67,6 +69,8 @@ export async function POST(request: Request) {
             deliveryType: input.deliveryType,
             stockMode: input.stockMode,
             deliveryContent: input.deliveryContent || null,
+            originalCnyMinor: input.originalCny ?? null,
+            originalUsdMinor: input.originalUsd ?? null,
             prices: {
               create: [
                 { currency: "CNY", amountMinor: input.priceCny },

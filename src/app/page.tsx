@@ -120,16 +120,19 @@ export default async function Home() {
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {[
-            [PackageCheck, "01", locale === "zh" ? "选择服务" : "Choose"],
-            [ShieldCheck, "02", locale === "zh" ? "完成支付" : "Pay"],
-            [Headphones, "03", locale === "zh" ? "获取与售后" : "Delivery"],
-          ].map(([Icon, no, label]) => {
+            [PackageCheck, "01", locale === "zh" ? "选择服务" : "Choose", locale === "zh" ? "无需注册，选定规格即可下单。" : "No account. Pick a plan and check out."],
+            [ShieldCheck, "02", locale === "zh" ? "完成支付" : "Pay", locale === "zh" ? "电子收款码或 USDT，金额透明。" : "Pay by QR or USDT. Amount is shown clearly."],
+            [Headphones, "03", locale === "zh" ? "获取与售后" : "Delivery", locale === "zh" ? "订单页查看交付，售后随时可查。" : "Get it on the order page. Support anytime."],
+          ].map(([Icon, no, label, hint]) => {
             const StepIcon = Icon as typeof PackageCheck;
             return (
-              <div key={String(no)} className="card p-6">
-                <StepIcon size={24} className="text-sky-300" />
-                <span className="mt-8 block text-xs text-slate-600">{String(no)}</span>
-                <strong className="mt-2 block text-base">{String(label)}</strong>
+              <div key={String(no)} className="card relative overflow-hidden p-6">
+                <span aria-hidden="true" className="pointer-events-none absolute top-5 right-5 text-4xl font-semibold tracking-tight text-slate-500/20">{String(no)}</span>
+                <div className="flex size-11 items-center justify-center rounded-2xl bg-sky-400/10 text-sky-300">
+                  <StepIcon size={22} />
+                </div>
+                <strong className="mt-7 block text-base pr-12">{String(label)}</strong>
+                <p className="mt-2 pr-8 text-sm leading-6 text-slate-400">{String(hint)}</p>
               </div>
             );
           })}

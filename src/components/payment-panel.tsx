@@ -16,6 +16,8 @@ type Session = {
   method: Method | string;
   status: string;
   amountMinor: number;
+  originalAmountMinor: number | null;
+  originalUsdtAmount: number | null;
   currency: string;
   wallet: string;
   network: string;
@@ -197,7 +199,16 @@ export function PaymentPanel({ orderNo, locale }: { orderNo: string; locale: "zh
         <div className="mt-6">
           <div className="flex items-end justify-between gap-4">
             <span className="text-sm text-slate-400">{locale === "zh" ? "应付金额" : "Amount due"}</span>
-            <strong className="text-3xl tracking-tight">{method === "usdt" ? `${session.usdtAmount.toFixed(2)} USDT` : formatMoney(session.amountMinor, "CNY", locale)}</strong>
+            <span className="text-right">
+              <strong className="block text-3xl tracking-tight">{method === "usdt" ? `${session.usdtAmount.toFixed(2)} USDT` : formatMoney(session.amountMinor, "CNY", locale)}</strong>
+              {method === "usdt"
+                ? session.originalUsdtAmount
+                  ? <span className="mt-1 block text-sm font-normal text-slate-500 line-through">{`${session.originalUsdtAmount.toFixed(2)} USDT`}</span>
+                  : null
+                : session.originalAmountMinor
+                  ? <span className="mt-1 block text-sm font-normal text-slate-500 line-through">{formatMoney(session.originalAmountMinor, "CNY", locale)}</span>
+                  : null}
+            </span>
           </div>
 
           {method === "usdt" ? (

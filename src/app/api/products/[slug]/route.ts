@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { resolveStorePrice } from "@/lib/fx";
+import { resolveOriginalPrice, resolveStorePrice } from "@/lib/fx";
 import { getUsdCnyRate } from "@/lib/fx-server";
 
 export async function GET(_: Request, { params }: { params: Promise<{ slug: string }> }) {
@@ -19,6 +19,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ slug: stri
           sku: true,
           deliveryType: true,
           stockMode: true,
+          originalCnyMinor: true,
+          originalUsdMinor: true,
           prices: { where: { active: true }, select: { currency: true, amountMinor: true } },
           _count: { select: { inventoryItems: { where: { status: "AVAILABLE" } } } },
         },
@@ -33,6 +35,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ slug: stri
       ...variant,
       prices: ["CNY", "USD"].flatMap((currency) => {
         const price = resolveStorePrice(variant.prices, currency as "CNY" | "USD", usdCnyRate);
+        return price ? [{ currency: price.currency, amountMinor: price.amountMinor }] : [];
+      }),
+      originalPrices: ["CNY", "USD"].flatMap((currency) => {
+        const price = resolveOriginalPrice(variant, currency as "CNY" | "USD", usdCnyRate);
         return price ? [{ currency: price.currency, amountMinor: price.amountMinor }] : [];
       }),
     })),

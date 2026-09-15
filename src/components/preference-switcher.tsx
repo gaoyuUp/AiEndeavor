@@ -32,12 +32,12 @@ export function PreferenceSwitcher({ locale, currency, theme: initialTheme, lock
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="preference-switcher flex items-center gap-0.5">
       <button
         type="button"
         aria-label={theme === "dark" ? "切换到白色主题" : "切换到黑色主题"}
         title={theme === "dark" ? "切换到白色主题" : "切换到黑色主题"}
-        className="flex size-8 items-center justify-center rounded-full text-slate-300 hover:bg-white/8"
+        className="flex items-center justify-center px-0"
         onClick={toggleTheme}
       >
         {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
@@ -45,7 +45,7 @@ export function PreferenceSwitcher({ locale, currency, theme: initialTheme, lock
       <button
         type="button"
         aria-label="切换语言"
-        className="flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs text-slate-300 hover:bg-white/8"
+        className="flex items-center gap-1.5 px-2.5 text-xs"
         onClick={() => setPreference("locale", locale === "zh" ? "en" : "zh")}
       >
         <Languages size={14} />
@@ -55,7 +55,7 @@ export function PreferenceSwitcher({ locale, currency, theme: initialTheme, lock
         <button
           type="button"
           aria-label="切换货币"
-          className="flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs text-slate-300 hover:bg-white/8"
+          className="flex items-center gap-1.5 px-2.5 text-xs"
           onClick={() => setPreference("currency", currency === "CNY" ? "USD" : "CNY")}
         >
           <WalletCards size={14} />

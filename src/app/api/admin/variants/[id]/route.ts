@@ -11,6 +11,8 @@ const schema = z.object({
   deliveryContent: z.string().max(10000).optional(),
   priceCny: z.number().int().nonnegative(),
   priceUsd: z.number().int().positive().nullable().optional(),
+  originalCny: z.number().int().positive().nullable().optional(),
+  originalUsd: z.number().int().positive().nullable().optional(),
 });
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -28,6 +30,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           deliveryType: input.deliveryType,
           stockMode: input.stockMode,
           deliveryContent: input.deliveryContent || null,
+          originalCnyMinor: input.originalCny ?? null,
+          originalUsdMinor: input.originalUsd ?? null,
         },
       }),
       db.variantPrice.upsert({
