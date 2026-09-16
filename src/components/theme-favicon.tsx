@@ -4,14 +4,14 @@ import { useEffect } from "react";
 
 const ICONS = {
   dark: {
-    png: "/brand/icon-dark-32.png?v=lingsou3",
-    svg: "/brand/icon-dark.svg?v=lingsou3",
-    ico: "/brand/icon-dark.ico?v=lingsou3",
+    png: "/brand/icon-dark-32.png?v=lingsou5",
+    svg: "/brand/icon-dark.svg?v=lingsou5",
+    ico: "/brand/icon-dark.ico?v=lingsou5",
   },
   light: {
-    png: "/brand/icon-light-32.png?v=lingsou3",
-    svg: "/brand/icon-light.svg?v=lingsou3",
-    ico: "/brand/icon-light.ico?v=lingsou3",
+    png: "/brand/icon-light-32.png?v=lingsou5",
+    svg: "/brand/icon-light.svg?v=lingsou5",
+    ico: "/brand/icon-light.ico?v=lingsou5",
   },
 } as const;
 

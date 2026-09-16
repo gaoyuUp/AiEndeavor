@@ -21,10 +21,10 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: ["AI 服务", "ChatGPT", "Claude", "数字服务", "灵搜AI"],
     icons: {
       icon: [
-        { url: `/brand/icon-${tone}-32.png?v=lingsou3`, type: "image/png", sizes: "32x32" },
-        { url: `/brand/icon-${tone}.svg?v=lingsou3`, type: "image/svg+xml" },
+        { url: `/brand/icon-${tone}-32.png?v=lingsou5`, type: "image/png", sizes: "32x32" },
+        { url: `/brand/icon-${tone}.svg?v=lingsou5`, type: "image/svg+xml" },
       ],
-      apple: "/brand/apple-touch.png?v=lingsou3",
+      apple: "/brand/apple-touch.png?v=lingsou5",
     },
     openGraph: {
       title: "灵搜AI｜AI 服务，从这里开始",

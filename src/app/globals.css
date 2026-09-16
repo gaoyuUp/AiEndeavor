@@ -121,28 +121,24 @@ button {
   flex-shrink: 0;
   overflow: hidden;
   border-radius: 22%;
-  background: #07121c;
-  color: #2ee0ff;
-  box-shadow: inset 0 0 0 1px rgba(46, 224, 255, 0.16);
 }
 
-.brand-mark svg {
-  display: block;
+.brand-mark-img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
-html[data-theme="light"] .brand-mark {
-  background: #f3fafd;
-  color: #0b6a82;
-  box-shadow: inset 0 0 0 1px rgba(11, 106, 130, 0.22);
+.brand-mark-img-light {
+  display: none;
 }
 
-html[data-theme="light"] .admin-theme .brand-mark,
-.admin-theme .brand-mark {
-  background: #07121c;
-  color: #2ee0ff;
-  box-shadow: inset 0 0 0 1px rgba(46, 224, 255, 0.16);
+html[data-theme="light"] .store-theme .brand-mark-img-dark {
+  display: none;
+}
+
+html[data-theme="light"] .store-theme .brand-mark-img-light {
+  display: block;
 }
 
 .text-gradient {
