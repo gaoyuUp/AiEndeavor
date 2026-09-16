@@ -10,12 +10,6 @@ type Props = {
   lockCurrency?: boolean;
 };
 
-type Props = {
-  locale: "zh" | "en";
-  currency: "CNY" | "USD";
-  theme: "dark" | "light";
-};
-
 function setPreference(name: string, value: string) {
   document.cookie = `${name}=${value}; path=/; max-age=31536000; samesite=lax`;
   window.location.reload();

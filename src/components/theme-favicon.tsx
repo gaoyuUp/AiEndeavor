@@ -20,7 +20,7 @@ function applyFavicon(theme: string) {
   for (const link of document.querySelectorAll<HTMLLinkElement>('link[rel="icon"]')) {
     const type = link.type || "";
     const href = link.getAttribute("href") || "";
-    let next = pack.ico;
+    let next: string = pack.ico;
     let nextType = "image/x-icon";
     if (type.includes("svg") || href.includes(".svg")) {
       next = pack.svg;
